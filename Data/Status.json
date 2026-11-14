@@ -1,4 +1,7 @@
 {
-  "status": "working",
-  "version": "1.2"
+  "status": "down",
+  "version": "1.2",
+  "reason": "i have no clue",
+  "eta": "~30 minutes",
+  "endsAt": 1794677760
 }
