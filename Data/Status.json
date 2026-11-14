@@ -1,7 +1,15 @@
 {
-  "status": "down",
-  "version": "1.2",
-  "reason": "i have no clue",
-  "eta": "~30 minutes",
-  "endsAt": 1794677760
+  "status": "updating",
+  "version": "1.0.0",
+  "reason": "rawer",
+  "endsAt": 1794681000,
+  "update": {
+    "title": "im gonn nuke u rass",
+    "changes": [
+      "somethig",
+      "eeee",
+      "ee",
+      "e"
+    ]
+  }
 }
