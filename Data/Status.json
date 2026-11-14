@@ -2,8 +2,13 @@
   "status": "updating",
   "version": "1.2",
   "eta": "~30 minutes",
+  "endsAt": 1794677760,
   "update": {
     "title": "Made ur mom bigger",
-    "changes": ["Faster mom rendering", "New  something", "Bug fixes"]
+    "changes": [
+      "Faster mom rendering",
+      "New  something",
+      "Bug fixes"
+    ]
   }
 }
