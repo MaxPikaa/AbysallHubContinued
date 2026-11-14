@@ -5,12 +5,10 @@
 
 local LoadStart = tick()
 
+
 if shared.Hastelepasta then
     return 
 end
-
-shared.Hastelepasta = true
-
 
 getgenv().Abysall = {
     Legit = true
@@ -18,6 +16,11 @@ getgenv().Abysall = {
 
 
 local BaseUrl = "https://raw.githubusercontent.com/coolcookiebusiness/AbysallHubContinued/main/"
+loadstring(game:HttpGet(BaseUrl .. "Components/Status.luau"))(BaseUrl)
+
+if shared.Runningnofine then
+    return 
+end
 
 getgenv().Abysall = {
     Environment = loadstring(game:HttpGet(BaseUrl .. "Components/Environment.luau"))(),
@@ -26,8 +29,9 @@ getgenv().Abysall = {
     Legit = true
 }
 
-local Abysall = getgenv().Abysall
+shared.Hastelepasta = true
 
+local Abysall = getgenv().Abysall
 local function CloneReference(Object)
     if Abysall and Abysall.Environment.cloneref then
         return Abysall.Environment.cloneref(Object)
@@ -185,7 +189,6 @@ end
 
 -- DontGroup
 local LocalPlayer = Services.Players.LocalPlayer
-
 
 
 local PortraitName = "MirrorRig_Portrait_" .. LocalPlayer.Name
@@ -1267,6 +1270,7 @@ local Window = Library:CreateWindow({
 })
 
 
+
 Abysall.Interface.ApplyInfoTab(Window)
 
 local Tabs = {
@@ -1278,7 +1282,6 @@ local Tabs = {
 	Stairwell = Window:AddTab("Stairwell", "rbxassetid://80017304328364"),
 	Halloween = Window:AddTab("New - Halloween", "rbxassetid://101034055693026"),
 }
-
 
 Groupboxes.General_Character = Tabs.General:AddLeftGroupbox("Character")
 Groupboxes.General_Character:AddSlider("SpeedBoostSlider", {
@@ -8382,9 +8385,6 @@ Library:OnUnload(function()
 	CollisionPart.Position      = RootPart.Position + Vector3.new(0, BaseY, 0)
 	CollisionPartClone.Position = RootPart.Position + Vector3.new(0, BaseY, 0)
 
-	if Character:FindFirstChild("LowerTorso") and Character.LowerTorso:FindFirstChild("Root") then
-		Character.LowerTorso.Root.C1 = Globals.OriginalC1
-	end
 	if Collision:FindFirstChild("CollisionCrouch") then
 		Collision.CollisionCrouch.Position = RootPart.Position + Vector3.new(0, -0.982, 0)
 	end
@@ -8403,7 +8403,7 @@ Library:OnUnload(function()
 		local Controls = require(LocalPlayer.PlayerScripts.PlayerModule):GetControls()
 		Controls.GetMoveVector = Globals.OriginalGetMoveVector
 	end
-
+	
 	getgenv().Abysall = nil
 	shared.Hastelepasta = false
 end)
@@ -8411,7 +8411,5 @@ end)
 
 
 while not Globals.MainUI do task.wait() end
-
-
 Abysall.Interface.ApplySettingsTab(Window)
 Functions.Notify({ Title = "Successfully loaded in " .. math.floor((tick() - LoadStart) * 1000) / 1000 .. " seconds." , Body = "Press '" .. tostring(Options.MenuKeybind.Value) .. "' to toggle the UI."})
