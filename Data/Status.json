@@ -1,5 +1,8 @@
 {
-  "status": "working",
+  "status": "maintenance",
   "version": "1.1.1",
-  "message": "Everything is running smoothly."
+  "reason": "We are testing some features out and we will be right back!",
+  "eta": "About 10 minutes",
+  "endsAt": 1794777420,
+  "music": "rbxassetid://140658234151287"
 }
