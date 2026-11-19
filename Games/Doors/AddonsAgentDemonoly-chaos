@@ -1,0 +1,946 @@
+return function(Window)
+	local Library = Abysall.Interface.Library
+	local Toggles = Library.Toggles
+	local Options = Library.Options
+	local ESPLibrary = Abysall.ESPLibrary
+
+	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local LocalPlayer = Players.LocalPlayer
+
+	local GameData = ReplicatedStorage:FindFirstChild("GameData")
+	local FloorValue = GameData and GameData:FindFirstChild("Floor")
+	local Floor = FloorValue and FloorValue.Value
+
+	local Character, RootPart, Humanoid
+
+	local function RefreshCharacter()
+		Character = LocalPlayer.Character
+		RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+		Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+	end
+
+	RefreshCharacter()
+	LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
+		Character = NewCharacter
+		RootPart = NewCharacter:WaitForChild("HumanoidRootPart")
+		Humanoid = NewCharacter:WaitForChild("Humanoid")
+	end)
+	LocalPlayer.CharacterRemoving:Connect(function()
+		Character, RootPart, Humanoid = nil, nil, nil
+	end)
+
+	local Tab = Window:AddTab("Void Addon", "star")
+
+	-- Spin
+
+	local GroupSpin = Tab:AddLeftGroupbox("Spin")
+	GroupSpin:AddToggle("VoidAddon_SpinToggle", {Text = "Spin", Default = false, Tooltip = "Continuously spins your character around the Y axis."})
+	GroupSpin:AddSlider("VoidAddon_SpinSpeed", {Text = "Spin Speed", Min = 0, Max = 50, Default = 10, Rounding = 1, Compact = true})
+	GroupSpin:AddToggle("VoidAddon_SpinReverse", {Text = "Reverse Spin", Default = false, Tooltip = "Reverses the direction of the spin."})
+	GroupSpin:AddButton({Text = "Stop Spinning", Func = function() Toggles.VoidAddon_SpinToggle:SetValue(false) end})
+
+	local SpinConnection
+	Toggles.VoidAddon_SpinToggle:OnChanged(function(Value)
+		if SpinConnection then SpinConnection:Disconnect(); SpinConnection = nil end
+		if not Value then return end
+		SpinConnection = RunService.RenderStepped:Connect(function(dt)
+			if Toggles.VoidAddon_SpinToggle.Value and Character and RootPart then
+				local dir = Toggles.VoidAddon_SpinReverse.Value and -1 or 1
+				Character:PivotTo(Character:GetPivot() * CFrame.Angles(0, math.rad(Options.VoidAddon_SpinSpeed.Value * 360) * dt * dir, 0))
+			end
+		end)
+	end)
+
+	-- Velocity
+
+	local GroupVelocity = Tab:AddLeftGroupbox("Velocity")
+	GroupVelocity:AddToggle("VoidAddon_VelocityBoostToggle", {Text = "Velocity Boost", Default = false, Tooltip = "Adds controlled horizontal velocity while moving."})
+	GroupVelocity:AddSlider("VoidAddon_VelocityMultiplier", {Text = "Velocity Multiplier", Min = 1, Max = 5, Default = 1.5, Rounding = 1, Compact = true})
+	GroupVelocity:AddToggle("VoidAddon_AirControlToggle", {Text = "Air Control", Default = false, Tooltip = "Keeps horizontal movement responsive while airborne."})
+	GroupVelocity:AddSlider("VoidAddon_AirControlStrength", {Text = "Air Control", Min = 0, Max = 100, Default = 35, Rounding = 0, Compact = true})
+	GroupVelocity:AddToggle("VoidAddon_MomentumLockToggle", {Text = "Momentum Lock", Default = false, Tooltip = "Maintains a minimum horizontal velocity while moving."})
+	GroupVelocity:AddSlider("VoidAddon_MomentumSpeed", {Text = "Momentum Speed", Min = 0, Max = 100, Default = 20, Rounding = 0, Compact = true})
+	GroupVelocity:AddButton({Text = "Stop Momentum", Func = function()
+		if RootPart then RootPart.AssemblyLinearVelocity = Vector3.new(0, RootPart.AssemblyLinearVelocity.Y, 0) end
+	end})
+
+	local VelocityConnection = RunService.Heartbeat:Connect(function(dt)
+		if not RootPart or not Humanoid then return end
+		local v = RootPart.AssemblyLinearVelocity
+		local move = Humanoid.MoveDirection
+		if Toggles.VoidAddon_VelocityBoostToggle.Value and move.Magnitude > 0 then
+			local target = move.Unit * (Humanoid.WalkSpeed * Options.VoidAddon_VelocityMultiplier.Value)
+			local y = v.Y
+			RootPart.AssemblyLinearVelocity = Vector3.new(target.X, y, target.Z)
+		elseif Toggles.VoidAddon_AirControlToggle.Value and Humanoid.FloorMaterial == Enum.Material.Air and move.Magnitude > 0 then
+			local a = math.clamp(Options.VoidAddon_AirControlStrength.Value / 100, 0, 1)
+			local target = move.Unit * math.max(v.Magnitude, Humanoid.WalkSpeed)
+			RootPart.AssemblyLinearVelocity = Vector3.new(v.X + (target.X-v.X)*a*dt*10, v.Y, v.Z + (target.Z-v.Z)*a*dt*10)
+		elseif Toggles.VoidAddon_MomentumLockToggle.Value and move.Magnitude > 0 then
+			local flat = Vector3.new(v.X,0,v.Z)
+			local minSpeed = Options.VoidAddon_MomentumSpeed.Value
+			if flat.Magnitude < minSpeed then
+				local target = move.Unit * minSpeed
+				RootPart.AssemblyLinearVelocity = Vector3.new(target.X,v.Y,target.Z)
+			end
+		end
+	end)
+
+	-- Chaos
+
+	local GroupChaos = Tab:AddRightGroupbox("Chaos")
+	GroupChaos:AddToggle("VoidAddon_LaunchSelfToggle", {Text = "Launch Yourself", Default = false, Tooltip = "Launches your character upward and forward."})
+	GroupChaos:AddSlider("VoidAddon_LaunchPower", {Text = "Launch Power", Min = 25, Max = 250, Default = 100, Rounding = 0, Compact = true})
+	GroupChaos:AddToggle("VoidAddon_ScreenShakeToggle", {Text = "Screen Shake", Default = false, Tooltip = "Adds a camera shake effect."})
+	GroupChaos:AddSlider("VoidAddon_ScreenShakeStrength", {Text = "Shake Strength", Min = 1, Max = 20, Default = 5, Rounding = 0, Compact = true})
+	GroupChaos:AddToggle("VoidAddon_RainbowCharacterToggle", {Text = "Rainbow Character", Default = false, Tooltip = "Cycles your character colors through the rainbow."})
+	GroupChaos:AddToggle("VoidAddon_CharacterTiltToggle", {Text = "Character Tilt", Default = false, Tooltip = "Continuously tilts your character side to side."})
+	GroupChaos:AddSlider("VoidAddon_CharacterTiltAmount", {Text = "Tilt Amount", Min = 0, Max = 45, Default = 15, Rounding = 0, Compact = true})
+	GroupChaos:AddToggle("VoidAddon_RagdollToggle", {Text = "Ragdoll", Default = false, Tooltip = "Temporarily puts your character into a physics state."})
+	GroupChaos:AddButton({Text = "Force Sit", Func = function() if Humanoid then Humanoid.Sit = true end end})
+	GroupChaos:AddToggle("VoidAddon_ChaosModeToggle", {Text = "Chaos Mode", Default = false, Tooltip = "Combines the fun effects."})
+
+	local OriginalColors, ChaosTime = {}, 0
+
+	local function SetCharacterColor(color)
+		if not Character then return end
+		for _, obj in Character:GetDescendants() do
+			if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
+				OriginalColors[obj] = OriginalColors[obj] or obj.Color
+				obj.Color = color
+			end
+		end
+	end
+
+	local function RestoreCharacterColors()
+		for obj,color in pairs(OriginalColors) do if obj and obj.Parent then obj.Color=color end end
+		table.clear(OriginalColors)
+	end
+
+	Toggles.VoidAddon_LaunchSelfToggle:OnChanged(function(v)
+		if v and RootPart then
+			RootPart.AssemblyLinearVelocity = RootPart.CFrame.LookVector * Options.VoidAddon_LaunchPower.Value + Vector3.new(0,Options.VoidAddon_LaunchPower.Value,0)
+			Toggles.VoidAddon_LaunchSelfToggle:SetValue(false)
+		end
+	end)
+
+	Toggles.VoidAddon_RagdollToggle:OnChanged(function(v)
+		if Humanoid then Humanoid:ChangeState(v and Enum.HumanoidStateType.Physics or Enum.HumanoidStateType.GettingUp) end
+	end)
+
+	local FunConnection = RunService.RenderStepped:Connect(function(dt)
+		if not Character or not RootPart then return end
+		ChaosTime += dt
+		local chaos = Toggles.VoidAddon_ChaosModeToggle.Value
+		if Toggles.VoidAddon_RainbowCharacterToggle.Value or chaos then SetCharacterColor(Color3.fromHSV((ChaosTime*0.25)%1,1,1))
+		elseif next(OriginalColors) then RestoreCharacterColors() end
+		if Toggles.VoidAddon_CharacterTiltToggle.Value or chaos then
+			local amount = chaos and 15 or Options.VoidAddon_CharacterTiltAmount.Value
+			Character:PivotTo(Character:GetPivot() * CFrame.Angles(0,0,math.sin(ChaosTime*6)*math.rad(amount)*dt*6))
+		end
+		if Toggles.VoidAddon_ScreenShakeToggle.Value or chaos then
+			local strength = chaos and 3 or Options.VoidAddon_ScreenShakeStrength.Value
+			workspace.CurrentCamera.CFrame *= CFrame.Angles(math.rad(math.random(-strength,strength))*dt, math.rad(math.random(-strength,strength))*dt, 0)
+		end
+	end)
+
+	-- Guns
+
+	local GroupGuns = Tab:AddRightGroupbox("Guns")
+	GroupGuns:AddButton({
+		Text = "Seek Gun",
+		DoubleClick = false,
+		Tooltip = "Click to run the seek gun script.",
+		Func = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/persopoiu/scripts/main/seekgun.lua"))()
+		end,
+	})
+
+	-- Glitch Fragment Farm
+
+	local GroupGlitch = Tab:AddLeftGroupbox("Glitch Fragment Farm")
+
+	GroupGlitch:AddToggle("VoidAddon_GlitchFragmentVoid", {
+		Text = "Void Debug",
+		Default = false,
+		Tooltip = "Teleports you 1000 studs down every 0.01 seconds while enabled.",
+	})
+
+	GroupGlitch:AddToggle("VoidAddon_GlitchFragmentVelocity", {
+		Text = "Velocity Debug",
+		Default = false,
+		Tooltip = "Teleports you 1000 studs forward every 0.01 seconds while enabled.",
+	})
+
+	GroupGlitch:AddToggle("VoidAddon_GlitchFarmSafeMode", {
+		Text = "Safe Mode",
+		Default = false,
+		Tooltip = "Records your teleport positions so Go Back can return you.",
+	})
+
+	GroupGlitch:AddSlider("VoidAddon_GlitchFarmSafeBack", {Text = "Teleports Back", Min = 1, Max = 100, Default = 1, Rounding = 0, Compact = true})
+
+	local function IsFiniteVector3(Value)
+		return typeof(Value) == "Vector3"
+			and Value.X == Value.X
+			and Value.Y == Value.Y
+			and Value.Z == Value.Z
+			and math.abs(Value.X) < 1e15
+			and math.abs(Value.Y) < 1e15
+			and math.abs(Value.Z) < 1e15
+	end
+
+	local GlitchFarmRunning = false
+	local GlitchFarmHistory = {}
+	local GlitchFarmStopLoop = false
+
+	local function StartGlitchFarm()
+		if GlitchFarmRunning then
+			return
+		end
+		GlitchFarmRunning = true
+
+		task.spawn(function()
+			while not GlitchFarmStopLoop and (Toggles.VoidAddon_GlitchFragmentVoid.Value or Toggles.VoidAddon_GlitchFragmentVelocity.Value) do
+				pcall(function()
+					local FarmCharacter = LocalPlayer and LocalPlayer.Character
+					local Root = FarmCharacter and FarmCharacter:FindFirstChild("HumanoidRootPart")
+					local FarmHumanoid = FarmCharacter and FarmCharacter:FindFirstChildOfClass("Humanoid")
+					if Root and Root.Parent and FarmHumanoid and FarmHumanoid.Health > 0 then
+						local Offset = Vector3.zero
+						if Toggles.VoidAddon_GlitchFragmentVelocity.Value then
+							Offset = Offset + Root.CFrame.LookVector * 1000
+						end
+						if Toggles.VoidAddon_GlitchFragmentVoid.Value then
+							Offset = Offset - Vector3.new(0, 1000, 0)
+						end
+						if Offset.Magnitude > 0 then
+							local NewPosition = Root.CFrame.Position + Offset
+							if IsFiniteVector3(NewPosition) then
+								if Toggles.VoidAddon_GlitchFarmSafeMode.Value and IsFiniteVector3(Root.CFrame.Position) then
+									if #GlitchFarmHistory >= 1000 then
+										table.remove(GlitchFarmHistory, 1)
+									end
+									table.insert(GlitchFarmHistory, Root.CFrame.Position)
+								end
+								Root.CFrame = CFrame.new(NewPosition) * (Root.CFrame - Root.CFrame.Position)
+							end
+						end
+					end
+				end)
+				task.wait(0.01)
+			end
+
+			GlitchFarmRunning = false
+		end)
+	end
+
+	Toggles.VoidAddon_GlitchFragmentVoid:OnChanged(function(Enabled)
+		if Enabled then
+			GlitchFarmStopLoop = false
+			StartGlitchFarm()
+		end
+	end)
+
+	Toggles.VoidAddon_GlitchFragmentVelocity:OnChanged(function(Enabled)
+		if Enabled then
+			GlitchFarmStopLoop = false
+			StartGlitchFarm()
+		end
+	end)
+
+	GroupGlitch:AddButton({
+		Text = "Go Back",
+		Func = function()
+			if #GlitchFarmHistory == 0 then
+				Library:Notify("Void Addon", "Safe Mode: No teleport history yet.")
+				return
+			end
+
+			GlitchFarmStopLoop = true
+			pcall(function()
+				Toggles.VoidAddon_GlitchFragmentVoid:SetValue(false)
+			end)
+			pcall(function()
+				Toggles.VoidAddon_GlitchFragmentVelocity:SetValue(false)
+			end)
+
+			local FarmCharacter = LocalPlayer and LocalPlayer.Character
+			local Root = FarmCharacter and FarmCharacter:FindFirstChild("HumanoidRootPart")
+			local FarmHumanoid = FarmCharacter and FarmCharacter:FindFirstChildOfClass("Humanoid")
+			if not Root or not Root.Parent or not FarmHumanoid or FarmHumanoid.Health <= 0 then
+				Library:Notify("Void Addon", "Safe Mode: Character not ready.")
+				return
+			end
+
+			local Wanted = math.floor(tonumber(Options.VoidAddon_GlitchFarmSafeBack.Value) or 1)
+			local Steps = math.max(1, math.min(Wanted, #GlitchFarmHistory))
+			local Target = GlitchFarmHistory[#GlitchFarmHistory - Steps + 1]
+
+			if not Target or not IsFiniteVector3(Target) then
+				Library:Notify("Void Addon", "Safe Mode: Stored position was invalid.")
+				return
+			end
+
+			Root.CFrame = CFrame.new(Target) * (Root.CFrame - Root.CFrame.Position)
+			Root.AssemblyLinearVelocity = Vector3.zero
+			Root.AssemblyAngularVelocity = Vector3.zero
+
+			for _ = 1, Steps do
+				table.remove(GlitchFarmHistory)
+			end
+
+			Library:Notify("Void Addon", "Safe Mode: Went back " .. tostring(Steps) .. " teleport(s).")
+		end,
+	})
+
+	-- Gold Changer
+
+	local GroupGold = Tab:AddLeftGroupbox("Gold Changer")
+	GroupGold:AddInput("VoidAddon_GoldChangerAmount", {
+		Text = "Gold Amount",
+		Default = "",
+		Numeric = true,
+		MaxLength = 9,
+		Placeholder = "1 - 999999999",
+		Tooltip = "Sets your gold to the typed amount (1 - 999999999)."
+	})
+
+	local function GoldChangerApply(RawValue)
+		local Amount = tonumber(RawValue)
+		if not Amount then
+			return
+		end
+
+		Amount = math.clamp(math.floor(Amount), 1, 999999999)
+
+		if not LocalPlayer then
+			return
+		end
+
+		local function IsGoldName(Name)
+			return typeof(Name) == "string" and Name:lower():find("gold", 1, true) ~= nil
+		end
+
+		local function ApplyValue(Object)
+			if Object:IsA("ValueBase") and IsGoldName(Object.Name) then
+				pcall(function()
+					Object.Value = Amount
+				end)
+			end
+		end
+
+		local function ApplyAttribute(Object)
+			for AttributeName in pairs(Object:GetAttributes()) do
+				if IsGoldName(AttributeName) then
+					pcall(function()
+						Object:SetAttribute(AttributeName, Amount)
+					end)
+				end
+			end
+		end
+
+		pcall(function()
+			local Gold = LocalPlayer.Gold
+			if typeof(Gold) == "Instance" then
+				if Gold:IsA("ValueBase") then
+					Gold.Value = Amount
+				else
+					for _, Descendant in ipairs(Gold:GetDescendants()) do
+						if Descendant:IsA("ValueBase") then
+							pcall(function()
+								Descendant.Value = Amount
+							end)
+						end
+					end
+					ApplyAttribute(Gold)
+				end
+			end
+		end)
+		ApplyAttribute(LocalPlayer)
+
+		local Containers = {}
+		for _, Parent in ipairs({ LocalPlayer, ReplicatedStorage }) do
+			for _, Name in ipairs({ "Data", "Values", "GameData" }) do
+				local Container = Parent:FindFirstChild(Name)
+				if Container then
+					table.insert(Containers, Container)
+
+					for _, NestedName in ipairs({ "Data", "Values" }) do
+						local Nested = Container:FindFirstChild(NestedName)
+						if Nested then
+							table.insert(Containers, Nested)
+						end
+					end
+				end
+			end
+		end
+
+		for _, Container in ipairs(Containers) do
+			ApplyValue(Container)
+			ApplyAttribute(Container)
+
+			for _, Descendant in ipairs(Container:GetDescendants()) do
+				ApplyValue(Descendant)
+				ApplyAttribute(Descendant)
+			end
+		end
+
+		for _, Descendant in ipairs(LocalPlayer:GetDescendants()) do
+			ApplyValue(Descendant)
+		end
+	end
+
+	Options.VoidAddon_GoldChangerAmount:OnChanged(GoldChangerApply)
+
+	-- Crucifix
+
+	local GroupCrucifix = Tab:AddRightGroupbox("Crucifix")
+	GroupCrucifix:AddToggle("VoidAddon_FixedCrucifix", {
+		Text = "Infinite Crucifix (Fixed)",
+		Default = false,
+		Tooltip = "Risky! You can die or lose the Crucifix. Recommended to have low ping and stable fps. Do not enable together with the main script's Infinite Crucifix.",
+		Risky = Floor ~= "Ballz",
+	})
+
+	local InfCrucifixDropTable = {
+		RushMoving   = 54,
+		AmbushMoving = 67,
+		A60          = 70,
+		GlitchRush   = 120,
+		GlitchAmbush = 155,
+		A120         = 75,
+	}
+
+	local InfCrucifixConnection = nil
+	local InfCrucifixBusy = false
+	local InfCrucifixCooldowns = {}
+
+	local function InfCrucifixHasCrucifix()
+		if Character and Character.Parent and Character:FindFirstChild("Crucifix") then
+			return true
+		end
+		local Backpack = LocalPlayer:FindFirstChild("Backpack")
+		if Backpack and Backpack:FindFirstChild("Crucifix") then
+			return true
+		end
+		return false
+	end
+
+	local function InfCrucifixFirePrompt(Prompt)
+		if not Prompt then return end
+		if type(fireproximityprompt) == "function" then
+			fireproximityprompt(Prompt)
+			return
+		end
+		pcall(function()
+			local OldHoldDuration = Prompt.HoldDuration
+			Prompt.HoldDuration = 0
+			Prompt:InputHoldBegin()
+			task.wait(0.1)
+			Prompt:InputHoldEnd()
+			Prompt.HoldDuration = OldHoldDuration
+		end)
+	end
+
+	local function FindDropItemRemote()
+		local Folder = ReplicatedStorage:FindFirstChild("RemotesFolder")
+			or ReplicatedStorage:FindFirstChild("EntityInfo")
+			or ReplicatedStorage:FindFirstChild("Bricks")
+		return Folder and Folder:FindFirstChild("DropItem")
+	end
+
+	Toggles.VoidAddon_FixedCrucifix:OnChanged(function(Value)
+		if InfCrucifixConnection then
+			InfCrucifixConnection:Disconnect()
+			InfCrucifixConnection = nil
+		end
+
+		table.clear(InfCrucifixCooldowns)
+		InfCrucifixBusy = false
+
+		if not Value then
+			return
+		end
+
+		local InfCrucifixRaycastParams = RaycastParams.new()
+		InfCrucifixRaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+		InfCrucifixConnection = RunService.RenderStepped:Connect(function()
+			if not Toggles.VoidAddon_FixedCrucifix.Value or InfCrucifixBusy then
+				return
+			end
+
+			local InfCrucifixCharacter = LocalPlayer.Character
+			if not InfCrucifixCharacter then
+				return
+			end
+
+			local InfCrucifixCollision = InfCrucifixCharacter:FindFirstChild("CollisionPart")
+				or InfCrucifixCharacter:FindFirstChild("Collision")
+			if not InfCrucifixCollision then
+				return
+			end
+
+			InfCrucifixRaycastParams.FilterDescendantsInstances = { InfCrucifixCharacter }
+
+			local Now = tick()
+
+			for _, InfCrucifixEntity in ipairs(Workspace:GetChildren()) do
+				local InfCrucifixMaxDistance = InfCrucifixDropTable[InfCrucifixEntity.Name]
+				if not InfCrucifixMaxDistance or not InfCrucifixEntity.PrimaryPart then
+					continue
+				end
+
+				if InfCrucifixCooldowns[InfCrucifixEntity] and Now - InfCrucifixCooldowns[InfCrucifixEntity] < 3 then
+					continue
+				end
+
+				local InfCrucifixPrimary = InfCrucifixEntity.PrimaryPart
+				if InfCrucifixPrimary.CanCollide ~= true then
+					InfCrucifixPrimary.CanCollide = true
+				end
+				if InfCrucifixPrimary.CanQuery ~= true then
+					InfCrucifixPrimary.CanQuery = true
+				end
+
+				local InfCrucifixOrigin = InfCrucifixCollision.Position
+				local InfCrucifixDirection = InfCrucifixPrimary.Position - InfCrucifixOrigin
+				if InfCrucifixDirection.Magnitude <= 0 then
+					continue
+				end
+
+				local InfCrucifixRayResult = Workspace:Raycast(InfCrucifixOrigin, InfCrucifixDirection, InfCrucifixRaycastParams)
+				if not InfCrucifixRayResult or not InfCrucifixRayResult.Instance:IsDescendantOf(InfCrucifixEntity) then
+					continue
+				end
+
+				local InfCrucifixDistance = (InfCrucifixOrigin - InfCrucifixPrimary.Position).Magnitude
+				if InfCrucifixDistance >= InfCrucifixMaxDistance then
+					continue
+				end
+
+				local InfCrucifixTool = InfCrucifixCharacter:FindFirstChildOfClass("Tool")
+				if not InfCrucifixTool or InfCrucifixTool.Name ~= "Crucifix" then
+					continue
+				end
+
+				InfCrucifixCooldowns[InfCrucifixEntity] = Now
+				InfCrucifixBusy = true
+
+				task.spawn(function()
+					local DropItem = FindDropItemRemote()
+					if not DropItem then
+						Library:Notify("Void Addon", "Infinite Crucifix: The 'DropItem' remote was not found.")
+						InfCrucifixBusy = false
+						return
+					end
+
+					DropItem:FireServer(InfCrucifixTool)
+					task.wait(0.54)
+
+					local InfCrucifixDrops = Workspace:FindFirstChild("Drops")
+					if not InfCrucifixDrops then
+						Library:Notify("Void Addon", "Infinite Crucifix: The Crucifix dropped - pick it back up manually.")
+						InfCrucifixBusy = false
+						return
+					end
+
+					local InfCrucifixDropped = InfCrucifixDrops:FindFirstChild("Crucifix")
+					local InfCrucifixDeadline = tick() + 1.5
+					while not InfCrucifixDropped and tick() < InfCrucifixDeadline do
+						task.wait(0.05)
+						InfCrucifixDropped = InfCrucifixDrops:FindFirstChild("Crucifix")
+					end
+
+					if not InfCrucifixDropped then
+						for _, Child in ipairs(InfCrucifixDrops:GetChildren()) do
+							if string.find(string.lower(Child.Name), "crucifix") then
+								InfCrucifixDropped = Child
+								break
+							end
+						end
+					end
+
+					local InfCrucifixPrompt
+					if InfCrucifixDropped then
+						InfCrucifixPrompt = InfCrucifixDropped:FindFirstChildOfClass("ProximityPrompt")
+							or InfCrucifixDropped:FindFirstChildWhichIsA("ProximityPrompt", true)
+					end
+
+					if not InfCrucifixPrompt then
+						Library:Notify("Void Addon", "Infinite Crucifix: Couldn't find the dropped Crucifix - pick it back up manually.")
+						InfCrucifixBusy = false
+						return
+					end
+
+					InfCrucifixFirePrompt(InfCrucifixPrompt)
+
+					local InfCrucifixPickupDeadline = tick() + 2
+					while tick() < InfCrucifixPickupDeadline do
+						if InfCrucifixHasCrucifix() then
+							break
+						end
+						task.wait(0.05)
+					end
+
+					if not InfCrucifixHasCrucifix() then
+						Library:Notify("Void Addon", "Infinite Crucifix: The Crucifix is on the ground - pick it back up manually.")
+					end
+
+					task.wait(0.6)
+					InfCrucifixBusy = false
+				end)
+			end
+		end)
+	end)
+
+	-- Stairwell ESP
+
+	local GroupESP = Tab:AddRightGroupbox("Stairwell ESP")
+
+	GroupESP:AddToggle("VoidAddon_GrinderDepotESP", {
+		Text = "Stairwell Scrappers",
+		Default = false,
+		Tooltip = "ESP every StairwellScrapper model found anywhere inside Workspace.CurrentRooms."
+	})
+	Toggles.VoidAddon_GrinderDepotESP:AddColorPicker("VoidAddon_GrinderDepotESPColor", {
+		Text = "Stairwell Scrappers",
+		Default = Color3.fromRGB(255, 170, 0),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_FireAlarmESP", {
+		Text = "Fire Alarms",
+		Default = false,
+		Tooltip = "ESP every StairwellFireAlarm found anywhere inside Workspace.CurrentRooms."
+	})
+	Toggles.VoidAddon_FireAlarmESP:AddColorPicker("VoidAddon_FireAlarmESPColor", {
+		Text = "Fire Alarms",
+		Default = Color3.fromRGB(255, 0, 0),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_CreakESP", {
+		Text = "Creak",
+		Default = false,
+		Tooltip = "ESP 'Creak' whenever it is inside Workspace.LiveEntities."
+	})
+	Toggles.VoidAddon_CreakESP:AddColorPicker("VoidAddon_CreakESPColor", {
+		Text = "Creak",
+		Default = Color3.fromRGB(255, 0, 255),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_SpikeWallESP", {
+		Text = "Spike Wall",
+		Default = false,
+		Tooltip = "ESP 'Crush' / 'Crusher' meshes anywhere inside Workspace.CurrentRooms (e.g. room 29 Assets)."
+	})
+	Toggles.VoidAddon_SpikeWallESP:AddColorPicker("VoidAddon_SpikeWallESPColor", {
+		Text = "Spike Wall",
+		Default = Color3.fromRGB(255, 80, 0),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_TVStandESP", {
+		Text = "TV Stand",
+		Default = false,
+		Tooltip = "ESP every 'TV_Stand' model found anywhere inside Workspace."
+	})
+	Toggles.VoidAddon_TVStandESP:AddColorPicker("VoidAddon_TVStandESPColor", {
+		Text = "TV Stand",
+		Default = Color3.fromRGB(0, 255, 170),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_StairwellTerminalESP", {
+		Text = "Stairwell Terminal",
+		Default = false,
+		Tooltip = "ESP every 'StairwellTerminal' model found inside Workspace.CurrentRooms."
+	})
+	Toggles.VoidAddon_StairwellTerminalESP:AddColorPicker("VoidAddon_StairwellTerminalESPColor", {
+		Text = "Stairwell Terminal",
+		Default = Color3.fromRGB(0, 170, 255),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_ExitSignESP", {
+		Text = "Exit Sign",
+		Default = false,
+		Tooltip = "ESP every 'ExitSignStairwell' model found inside Workspace.CurrentRooms."
+	})
+	Toggles.VoidAddon_ExitSignESP:AddColorPicker("VoidAddon_ExitSignESPColor", {
+		Text = "Exit Sign",
+		Default = Color3.fromRGB(0, 255, 0),
+		Transparency = 0
+	})
+
+	GroupESP:AddToggle("VoidAddon_CubbyESP", {
+		Text = "Cubby",
+		Default = false,
+		Tooltip = "ESP every 'Cubby_Large' model found inside Workspace.CurrentRooms."
+	})
+	Toggles.VoidAddon_CubbyESP:AddColorPicker("VoidAddon_CubbyESPColor", {
+		Text = "Cubby",
+		Default = Color3.fromRGB(255, 170, 255),
+		Transparency = 0
+	})
+
+	local GrinderDepotESPObjects = {}
+	local GrinderDepotConnections = {}
+
+	local function RemoveGrinderDepotESP(object)
+		if GrinderDepotESPObjects[object] then
+			ESPLibrary:RemoveESP(object)
+			GrinderDepotESPObjects[object] = nil
+		end
+	end
+
+	local function AddGrinderDepotESP(object)
+		if GrinderDepotESPObjects[object] then return end
+		GrinderDepotESPObjects[object] = true
+		ESPLibrary:AddESP({
+			Object = object,
+			Text = "Stairwell Scrapper",
+			Color = Options.VoidAddon_GrinderDepotESPColor.Value
+		})
+		object.Destroying:Once(function()
+			RemoveGrinderDepotESP(object)
+		end)
+	end
+
+	local function ScanGrinderDepot()
+		local rooms = workspace:FindFirstChild("CurrentRooms")
+		if not rooms then return end
+		for _, object in ipairs(rooms:GetDescendants()) do
+			if object:IsA("Model") and object.Name == "StairwellScrapper" then
+				AddGrinderDepotESP(object)
+			end
+		end
+	end
+
+	local function ClearGrinderDepot()
+		for object in pairs(GrinderDepotESPObjects) do RemoveGrinderDepotESP(object) end
+	end
+
+	Toggles.VoidAddon_GrinderDepotESP:OnChanged(function(value)
+		if value then
+			ScanGrinderDepot()
+			local rooms = workspace:FindFirstChild("CurrentRooms")
+			if rooms then
+				table.insert(GrinderDepotConnections, rooms.DescendantAdded:Connect(function(object)
+					if Toggles.VoidAddon_GrinderDepotESP.Value and object:IsA("Model") and object.Name == "StairwellScrapper" then
+						AddGrinderDepotESP(object)
+					end
+				end))
+				table.insert(GrinderDepotConnections, rooms.DescendantRemoving:Connect(function(object)
+					RemoveGrinderDepotESP(object)
+				end))
+			end
+		else
+			ClearGrinderDepot()
+			for _,connection in ipairs(GrinderDepotConnections) do connection:Disconnect() end
+			table.clear(GrinderDepotConnections)
+		end
+	end)
+
+	Options.VoidAddon_GrinderDepotESPColor:OnChanged(function(Value)
+		for object in pairs(GrinderDepotESPObjects) do
+			ESPLibrary:UpdateObjectColor(object, Value)
+		end
+	end)
+
+	local FireAlarmESPObjects = {}
+	local FireAlarmESPConnections = {}
+
+	local function RemoveFireAlarmESP(object)
+		if FireAlarmESPObjects[object] then
+			ESPLibrary:RemoveESP(object)
+			FireAlarmESPObjects[object] = nil
+		end
+	end
+
+	local function IsFireAlarm(object)
+		return object.Name == "StairwellFireAlarm" and (object:IsA("Model") or object:IsA("BasePart"))
+	end
+
+	local function AddFireAlarmESP(object)
+		if FireAlarmESPObjects[object] then return end
+		FireAlarmESPObjects[object] = true
+		ESPLibrary:AddESP({
+			Object = object,
+			Text = "Fire Alarm",
+			Color = Options.VoidAddon_FireAlarmESPColor.Value
+		})
+		object.Destroying:Once(function()
+			RemoveFireAlarmESP(object)
+		end)
+	end
+
+	local function ScanFireAlarm()
+		local rooms = workspace:FindFirstChild("CurrentRooms")
+		if not rooms then return end
+		for _, object in ipairs(rooms:GetDescendants()) do
+			if IsFireAlarm(object) then
+				AddFireAlarmESP(object)
+			end
+		end
+	end
+
+	local function ClearFireAlarm()
+		for object in pairs(FireAlarmESPObjects) do RemoveFireAlarmESP(object) end
+	end
+
+	Toggles.VoidAddon_FireAlarmESP:OnChanged(function(value)
+		if value then
+			ScanFireAlarm()
+			local rooms = workspace:FindFirstChild("CurrentRooms")
+			if rooms then
+				table.insert(FireAlarmESPConnections, rooms.DescendantAdded:Connect(function(object)
+					if Toggles.VoidAddon_FireAlarmESP.Value and IsFireAlarm(object) then
+						AddFireAlarmESP(object)
+					end
+				end))
+				table.insert(FireAlarmESPConnections, rooms.DescendantRemoving:Connect(function(object)
+					RemoveFireAlarmESP(object)
+				end))
+			end
+		else
+			ClearFireAlarm()
+			for _,connection in ipairs(FireAlarmESPConnections) do connection:Disconnect() end
+			table.clear(FireAlarmESPConnections)
+		end
+	end)
+
+	Options.VoidAddon_FireAlarmESPColor:OnChanged(function(Value)
+		for object in pairs(FireAlarmESPObjects) do
+			ESPLibrary:UpdateObjectColor(object, Value)
+		end
+	end)
+
+	local function CreateStairwellWorkspaceESP(ToggleKey, ColorKey, Label, Matcher)
+		local Tracked = {}
+		local Connections = {}
+
+		local function RemoveESPObject(Object)
+			if Tracked[Object] then
+				ESPLibrary:RemoveESP(Object)
+				Tracked[Object] = nil
+			end
+		end
+
+		local function ResolveTarget(Object)
+			if Object:IsA("BasePart") or Object:IsA("Model") then
+				return Object
+			end
+			local Parent = Object.Parent
+			if Parent and (Parent:IsA("BasePart") or Parent:IsA("Model")) then
+				return Parent
+			end
+			return nil
+		end
+
+		local function AddESPObject(Object)
+			local Target = ResolveTarget(Object)
+			if not Target or Tracked[Target] then return end
+			Tracked[Target] = true
+			ESPLibrary:AddESP({
+				Object = Target,
+				Text = Label,
+				Color = Options[ColorKey].Value
+			})
+			Target.Destroying:Once(function()
+				RemoveESPObject(Target)
+			end)
+		end
+
+		local function Scan()
+			for _, Object in ipairs(workspace:GetDescendants()) do
+				if Matcher(Object) then
+					AddESPObject(Object)
+				end
+			end
+		end
+
+		local function Clear()
+			for Object in pairs(Tracked) do
+				RemoveESPObject(Object)
+			end
+		end
+
+		Toggles[ToggleKey]:OnChanged(function(Value)
+			if Value then
+				Scan()
+				table.insert(Connections, workspace.DescendantAdded:Connect(function(Object)
+					if Toggles[ToggleKey].Value and Matcher(Object) then
+						AddESPObject(Object)
+					end
+				end))
+				table.insert(Connections, workspace.DescendantRemoving:Connect(function(Object)
+					local Matched = Matcher(Object)
+					RemoveESPObject(Object)
+					if Matched and Object.Parent then
+						RemoveESPObject(Object.Parent)
+					end
+				end))
+			else
+				Clear()
+				for _, Connection in ipairs(Connections) do
+					Connection:Disconnect()
+				end
+				table.clear(Connections)
+			end
+		end)
+
+		Options[ColorKey]:OnChanged(function(Value)
+			for Object in pairs(Tracked) do
+				ESPLibrary:UpdateObjectColor(Object, Value)
+			end
+		end)
+	end
+
+	local function CreakESPMatcher(Object)
+		if Object.Name ~= "Creak" then return false end
+		local LiveEntities = workspace:FindFirstChild("LiveEntities")
+		return LiveEntities ~= nil and Object:IsDescendantOf(LiveEntities)
+	end
+
+	local function SpikeWallESPMatcher(Object)
+		if Object.Name ~= "Crush" and Object.Name ~= "Crusher" then return false end
+		local CurrentRoomsFolder = workspace:FindFirstChild("CurrentRooms")
+		return CurrentRoomsFolder ~= nil and Object:IsDescendantOf(CurrentRoomsFolder)
+	end
+
+	local function TVStandESPMatcher(Object)
+		return Object.Name == "TV_Stand"
+	end
+
+	CreateStairwellWorkspaceESP("VoidAddon_CreakESP", "VoidAddon_CreakESPColor", "Creak", CreakESPMatcher)
+	CreateStairwellWorkspaceESP("VoidAddon_SpikeWallESP", "VoidAddon_SpikeWallESPColor", "Spike Wall", SpikeWallESPMatcher)
+	CreateStairwellWorkspaceESP("VoidAddon_TVStandESP", "VoidAddon_TVStandESPColor", "TV Stand", TVStandESPMatcher)
+
+	local function StairwellTerminalESPMatcher(Object)
+		if Object.Name ~= "StairwellTerminal" then return false end
+		local CurrentRoomsFolder = workspace:FindFirstChild("CurrentRooms")
+		return CurrentRoomsFolder ~= nil and Object:IsDescendantOf(CurrentRoomsFolder)
+	end
+
+	local function ExitSignESPMatcher(Object)
+		if Object.Name ~= "ExitSignStairwell" then return false end
+		local CurrentRoomsFolder = workspace:FindFirstChild("CurrentRooms")
+		return CurrentRoomsFolder ~= nil and Object:IsDescendantOf(CurrentRoomsFolder)
+	end
+
+	local function CubbyESPMatcher(Object)
+		if Object.Name ~= "Cubby_Large" then return false end
+		local CurrentRoomsFolder = workspace:FindFirstChild("CurrentRooms")
+		return CurrentRoomsFolder ~= nil and Object:IsDescendantOf(CurrentRoomsFolder)
+	end
+
+	CreateStairwellWorkspaceESP("VoidAddon_StairwellTerminalESP", "VoidAddon_StairwellTerminalESPColor", "Stairwell Terminal", StairwellTerminalESPMatcher)
+	CreateStairwellWorkspaceESP("VoidAddon_ExitSignESP", "VoidAddon_ExitSignESPColor", "Exit Sign", ExitSignESPMatcher)
+	CreateStairwellWorkspaceESP("VoidAddon_CubbyESP", "VoidAddon_CubbyESPColor", "Cubby", CubbyESPMatcher)
+end
