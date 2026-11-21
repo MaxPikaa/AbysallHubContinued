@@ -1,1 +1,41 @@
-
+{
+  "version": 1,
+  "name": "Abysall Playlist",
+  "songs": [
+    {
+      "id": "song_001",
+      "title": "Song One",
+      "artist": "Artist One",
+      "audio": "https://example.com/music/song1.mp3",
+      "image": "https://example.com/images/song1.png"
+    },
+    {
+      "id": "song_002",
+      "title": "Song Two",
+      "artist": "Artist Two",
+      "audio": "https://example.com/music/song2.mp3",
+      "image": "https://example.com/images/song2.gif"
+    },
+    {
+      "id": "song_003",
+      "title": "Song Three",
+      "artist": "Artist Three",
+      "audio": "https://example.com/music/song3.mp3",
+      "image": "https://example.com/images/song3.png"
+    },
+    {
+      "id": "song_004",
+      "title": "Song Four",
+      "artist": "Artist Four",
+      "audio": "https://example.com/music/song4.mp3",
+      "image": "https://example.com/images/song4.gif"
+    },
+    {
+      "id": "song_005",
+      "title": "Song Five",
+      "artist": "Artist Five",
+      "audio": "https://example.com/music/song5.mp3",
+      "image": "https://example.com/images/song5.png"
+    }
+  ]
+}
