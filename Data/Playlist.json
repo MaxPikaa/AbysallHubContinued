@@ -4,10 +4,10 @@
   "songs": [
     {
       "id": "song_001",
-      "title": "Song One",
-      "artist": "Artist One",
-      "audio": "https://example.com/music/song1.mp3",
-      "image": "https://example.com/images/song1.png"
+      "title": "Komfort Satysfakcja kompilacja",
+      "artist": "MPOP83",
+      "audio": "https://github.com/coolcookiebusiness/AbysallHubContinued/blob/main/Data/Playlist/Audio/Komfort%20Satysfakcja%20kompilacja.mp3",
+      "image": "https://i.ytimg.com/vi/16YTXnRaUFk/maxresdefault.jpg"
     },
     {
       "id": "song_002",
