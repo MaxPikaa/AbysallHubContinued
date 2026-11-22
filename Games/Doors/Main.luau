@@ -15,7 +15,7 @@ getgenv().Abysall = {
 }
 
 
-local BaseUrl = "https://raw.githubusercontent.com/MaxPikaa//AbysallHubContinued/main/"
+local BaseUrl = "https://raw.githubusercontent.com/coolcookiebusiness/AbysallHubContinued/main/"
 loadstring(game:HttpGet(BaseUrl .. "Components/Status.luau"))(BaseUrl)
 
 if shared.Runningnofine then
@@ -1478,8 +1478,8 @@ Toggles.AutoInteractToggle:AddKeyPicker("AutoInteractKeybind", {
 })
 Groupboxes.Self_Automation:AddDropdown("AutoInteractIgnoreList", {
 	Text = "忽略列表",
-	Values = { "故障碎片", "Jeff 物品", "掉落道具", "金币", "矿车", "锁" },
-Default = { "故障碎片", "Jeff 物品", "掉落道具" },
+	Values = { "故障碎片", "Jeff 物品", "掉落物品", "金币", "矿车", "锁" },
+Default = { "故障碎片", "Jeff 物品", "掉落物品" },
 	Multi = true, AllowNull = true
 })
 Groupboxes.Self_Automation:AddDivider()
@@ -3523,7 +3523,7 @@ Groupboxes.Stairwell_Misc:AddToggle("BypassNoise", { Text = "Noise TV 破坏器"
 Groupboxes.Stairwell_Misc:AddToggle("AntiNoise", { Text = "防 Noise", Default = false, Tooltip = "防止游戏在移动时发出噪音（Visual Studio 自动 AI 生成 lmfao ✌）" })
 
 
-Groupboxes.Stairwell_Misc:AddToggle("DroppedItemValue", { Text = "道具数量", Default = false, Tooltip = "显示掉落道具的数量" })
+Groupboxes.Stairwell_Misc:AddToggle("DroppedItemValue", { Text = "道具数量", Default = false, Tooltip = "显示掉落物品的数量" })
 
 Groupboxes.Stairwell_Misc:AddToggle("KillAllWithCart", {
 	Text = "全部击杀（至少 1 辆购物车）",
@@ -3800,7 +3800,7 @@ Groupboxes.Stairwell_Misc:AddToggle("MeldRemover", {
 
 Groupboxes.Stairwell_Misc:AddToggle("StairwellLandingSpam", {
 	Text = "传送到垃圾处并丢弃垃圾",
-	Tooltip = "可与环绕、带来所有掉落道具配合使用",
+	Tooltip = "可与环绕、带来所有掉落物品配合使用",
 	Default = false,
 })
 
@@ -4146,7 +4146,7 @@ Groupboxes.Stairwell_Experimental:AddButton({
     Text = "将所有掉落物传送到最近的研磨机",
     Func = TPDropsToNearestGrinder,
     DoubleClick = false,
-    Tooltip = "将每个掉落道具传送到离你最近的研磨机",
+    Tooltip = "将每个掉落物品传送到离你最近的研磨机",
 })
 
 local function BringDroppedItems()
@@ -4169,13 +4169,13 @@ Groupboxes.Stairwell_Experimental:AddButton({
 	Text = "带来掉落物",
 	Func = function() BringDroppedItems() end,
 	DoubleClick = false,
-	Tooltip = "带来所有掉落道具"
+	Tooltip = "带来所有掉落物品"
 })
 
 Groupboxes.Stairwell_Experimental:AddToggle("EnableDroppedItemsInterval", {
 	Text = "启用定时",
 	Default = false,
-	Tooltip = "按选定间隔自动带来掉落道具"
+	Tooltip = "按选定间隔自动带来掉落物品"
 })
 
 Groupboxes.Stairwell_Experimental:AddSlider("DroppedItemsInterval", {
@@ -4185,7 +4185,7 @@ Groupboxes.Stairwell_Experimental:AddSlider("DroppedItemsInterval", {
 	Max = 60,
 	Rounding = 1,
 	Compact = false,
-	Tooltip = "多久带来一次掉落道具"
+	Tooltip = "多久带来一次掉落物品"
 })
 
 Toggles.EnableDroppedItemsInterval:OnChanged(function(enabled)
@@ -4487,7 +4487,7 @@ Groupboxes.Halloween_Misc:AddSlider("DroppedItemsIntervalHalloween", {
 	Max = 60,
 	Rounding = 1,
 	Compact = false,
-	Tooltip = "多久带来一次掉落道具"
+	Tooltip = "多久带来一次掉落物品"
 })
 
 Toggles.EnableDroppedItemsIntervalHalloween:OnChanged(function(enabled)
@@ -4561,7 +4561,7 @@ Toggles.VelocityManipulationToggle:AddKeyPicker("VelocityManipulationKeybind", {
 	Mode = Library.IsMobile and "Toggle" or "Hold", SyncToggleState = true
 })
 Groupboxes.Exploits_BypassRight:AddDropdown("VelocityManipulationMode", {
-	Values = {"Velocity", "Pivot"}, Text = "操控方式",
+	Values = {"平移", "轴心"}, Text = "操控方式",
 	Default = 1,
 })
 
@@ -5443,9 +5443,9 @@ Toggles.CurrencyESPToggle:OnChanged(function(Value)
 		if Value then
 			local Label
 			if Object.Name == "GoldPile" and Object:GetAttribute("GoldValue") then
-				Label = "Gold Pile [" .. Object:GetAttribute("GoldValue") .. "]"
+				Label = "金币 [" .. Object:GetAttribute("GoldValue") .. "]"
 			elseif Object.Name == "StardustPickup" then
-				Label = "Stardust Pile"
+				Label = "金币"
 			end
 			if Label then Functions.AddESP({ Object = Object, Text = Label, Color = Options.CurrencyESPColor.Value }, true) end
 		else
@@ -6795,14 +6795,14 @@ Functions.HandleCharacter = function(NewCharacter)
 		CollisionClone.CollisionGroup = Collision.CollisionGroup
 		CollisionClone.Position = RootPart.Position + Vector3.new(0, Toggles.PositionSpoof.Value and 1.75 or 0.18, 0)
 
-		if Toggles.VelocityManipulationToggle.Value and Options.VelocityManipulationMode.Value == "Velocity" then
+		if Toggles.VelocityManipulationToggle.Value and Options.VelocityManipulationMode.Value == "平移" then
 			Globals.ManipulateBody.Parent = RootPart
 			Globals.ManipulateBody.Velocity = RootPart.CFrame.LookVector * 2.25
 		else
 			Globals.ManipulateBody.Parent = nil
 		end
 
-		if Toggles.VelocityManipulationToggle.Value and Options.VelocityManipulationMode.Value == "Pivot" and Floor ~= "Fools" and Floor ~= "OldHotel" then
+		if Toggles.VelocityManipulationToggle.Value and Options.VelocityManipulationMode.Value == "轴心" and Floor ~= "Fools" and Floor ~= "OldHotel" then
 			Character:PivotTo(Camera:GetPivot() * CFrame.new(0, 0, 2560))
 		end
 
@@ -7687,7 +7687,7 @@ Connections.PromptAnimationFixer1 = Services.ProximityPromptService.PromptButton
 		or (Object.Parent and Object.Parent:GetAttribute("Locked") == true)
 		or (Object.Parent and Object.Parent.Parent and Object.Parent.Parent.Name == "Locker_Small_Locked" and Object.Name == "ActivateEventPrompt")
 	if IsLockPrompt then
-		if Options.AutoInteractIgnoreList.Value["Locks"] then return end
+		if Options.AutoInteractIgnoreList.Value["锁"] then return end
 		local KeyItems = { "Key","GeneratorFuse","KeyBackdoor","KeyElectrical","KeyIron","Lockpick","SkeletonKey","Shears","Multitool" }
 		local OffhandKeyItems = { "Key","GeneratorFuse","KeyElectrical","KeyIron" }
 		local HasKey = false
@@ -7942,7 +7942,7 @@ Functions.TriggerPrompt = function(Prompt)
 		or (Prompt.Parent and Prompt.Parent.Parent and Prompt.Parent.Parent.Name == "Locker_Small_Locked" and Prompt.Name == "ActivateEventPrompt")
 
 	if IsLockPrompt then
-		if Options.AutoInteractIgnoreList.Value["Locks"] then return end
+		if Options.AutoInteractIgnoreList.Value["锁"] then return end
 		local KeyItems = { "Key","GeneratorFuse","KeyBackdoor","KeyElectrical","KeyIron","Lockpick","SkeletonKey","Shears","Multitool" }
 		local OffhandKeyItems = { "Key","GeneratorFuse","KeyElectrical","KeyIron" }
 		local HasKey = false
@@ -7956,7 +7956,7 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Parent.Name == "Lock1" and not Functions.HasItem("Lockpick", true) and not Functions.HasItem("Multitool", true) or Prompt.Parent.Name == "Lock2" and not Functions.HasItem("Lockpick", true) and not Functions.HasItem("Multitool", true) then return end
 	if Functions.HasItem("Shears", true) and IsLockPrompt and Prompt.Parent.Name ~= "CuttableVines" and Prompt.Parent.Name ~= "Chest_Vine" and Prompt.Parent.Name ~= "Cellar" then return end
 
-	if Prompt.Parent.Name == "GlitchCube" and Options.AutoInteractIgnoreList.Value["Glitch Fragments"] then return end
+	if Prompt.Parent.Name == "GlitchCube" and Options.AutoInteractIgnoreList.Value["故障碎片"] then return end
 
 	if (Prompt.Parent.Name == "KeyObtain" and (Functions.HasItem("Key") or Functions.HasItem("KeyBackdoor")))
 		or (Prompt.Parent.Name == "ElectricalKeyObtain" and Functions.HasItem("KeyElectrical"))
@@ -7971,9 +7971,9 @@ Functions.TriggerPrompt = function(Prompt)
 	if Prompt.Name == "ActivateEventPrompt" and (Prompt.Parent.Name == "Padlock" or Prompt.Parent.Name == "MinesAnchor") then return end
 	if Prompt.Parent.Name == "LeverForGate" and Prompt:GetAttribute("Interactions") then return end
 	if Prompt.Parent.Parent and (Prompt.Parent.Parent.Name == "DoorFake" or Prompt.Parent.Parent.Name == "FakeDoor") then return end
-	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff Items"] then return end
+	if Prompt.Parent:GetAttribute("JeffShop") and Options.AutoInteractIgnoreList.Value["Jeff 物品"] then return end
 	if Prompt:GetAttribute("AutoInteractIgnore") then return end
-	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["Minecarts"] then return end
+	if Prompt.Name == "PushPrompt" and Options.AutoInteractIgnoreList.Value["矿车"] then return end
 	if (Prompt.Parent.Name == "GoldPile" or Prompt.Parent.Name == "StardustPickup") and Options.AutoInteractIgnoreList.Value["Currency"] then return end
 
 	if Prompt.Parent.Name == "Bandage" then
@@ -8074,7 +8074,7 @@ Connections.InfiniteItemsHandler = Services.ProximityPromptService.PromptTrigger
 		or (Object.Parent and Object.Parent:GetAttribute("Locked") == true)
 		or (Object.Parent and Object.Parent.Parent and Object.Parent.Parent.Name == "Locker_Small_Locked" and Object.Name == "ActivateEventPrompt")
 	if IsLockPrompt then
-		if Options.AutoInteractIgnoreList.Value["Locks"] then return end
+		if Options.AutoInteractIgnoreList.Value["锁"] then return end
 		local KeyItems = { "Key","GeneratorFuse","KeyBackdoor","KeyElectrical","KeyIron","Lockpick","SkeletonKey","Shears","Multitool" }
 		local OffhandKeyItems = { "Key","GeneratorFuse","KeyElectrical","KeyIron" }
 		local HasKey = false
