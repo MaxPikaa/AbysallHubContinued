@@ -14,14 +14,14 @@ Bindable.OnInvoke = function(Response)
         toclipboard("https://dsc.gg/abysallhub")
     end)
     if not Success then
-        Services.LocalPlayer:Kick("Failed to copy invite.\nhttps://dsc.gg/abysallhub")
+        Services.LocalPlayer:Kick("复制邀请链接失败\nhttps://dsc.gg/abysallhub")
     end
 end
 
 Services.StarterGui:SetCore("SendNotification", {
     Title = "Abysall Hub",
-    Text = "Only DOORS is supported right now, sorry :)",
+    Text = "目前仅支持 DOORS，抱歉 :)",
     Duration = 10,
-    Button1 = "Copy Discord Invite",
+    Button1 = "复制 Discord 邀请链接",
     Callback = Bindable,
 })
