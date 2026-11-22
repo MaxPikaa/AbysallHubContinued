@@ -1,1 +1,1 @@
-Read the license
+-- Read the license
