@@ -1478,8 +1478,8 @@ Toggles.AutoInteractToggle:AddKeyPicker("AutoInteractKeybind", {
 })
 Groupboxes.Self_Automation:AddDropdown("AutoInteractIgnoreList", {
 	Text = "忽略列表",
-	Values = { "故障碎片", "Jeff 物品", "掉落道具", "金币", "矿车", "锁" },
-Default = { "故障碎片", "Jeff 物品", "掉落道具" },
+	Values = { "Glitch Fragments", "Jeff Items", "Dropped Items", "Currency", "Minecarts", "Locks" },
+	Default = { "Glitch Fragments", "Jeff Items", "Dropped Items" },
 	Multi = true, AllowNull = true
 })
 Groupboxes.Self_Automation:AddDivider()
@@ -4574,7 +4574,7 @@ Groupboxes.Exploits_BypassRight:AddToggle("InfiniteItemsToggle", {
 })
 Groupboxes.Exploits_BypassRight:AddDropdown("InfiniteItemsList", {
 	Text = "道具列表",
-	Values = { "开锁器", "万能钥匙", "剪刀", "多功能工具" },
+	Values = { "Lockpicks", "Skeleton Key", "Shears", "Multitool" },
 	Multi = true, AllowNull = true,
 	Disabled = not Functions.CheckCompatability({"fireproximityprompt"}),
 	DisabledTooltip = Globals.IncompatibleMessage
